@@ -6,16 +6,21 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.graphics.drawable.BitmapDrawable;
+import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
 import android.text.format.Time;
+import android.view.Gravity;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
 
@@ -42,9 +47,52 @@ public class MyWatchFace extends CanvasWatchFaceService {
 	 */
 	private static final int MSG_UPDATE_TIME = 0;
 
+	private Engine watchEngine;
+
+	private BroadcastReceiver mBatInfoReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context arg0, Intent intent) {
+			if (watchEngine != null) {
+				int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+				watchEngine.updateBatteryInfo(level);
+			}
+		}
+	};
+
+	@Override
+	public void onCreate() {
+		super.onCreate();
+
+		registerReceiver(mBatInfoReceiver, new IntentFilter(
+				Intent.ACTION_BATTERY_CHANGED));
+		if (watchEngine != null) {
+			watchEngine.updateBatteryInfo((int) getBatteryLevel());
+		}
+	}
+
+	@Override
+	public void onDestroy() {
+		unregisterReceiver(mBatInfoReceiver);
+		super.onDestroy();
+	}
+
+	public float getBatteryLevel() {
+		Intent batteryIntent = registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+		int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+		int scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+
+		// Error checking that probably isn't needed but I added just in case.
+		if (level == -1 || scale == -1) {
+			return -1;
+		}
+
+		return ((float) level / (float) scale) * 100.0f;
+	}
+
 	@Override
 	public Engine onCreateEngine() {
-		return new Engine();
+		watchEngine = new Engine();
+		return watchEngine;
 	}
 
 	private class Engine extends CanvasWatchFaceService.Engine {
@@ -61,7 +109,8 @@ public class MyWatchFace extends CanvasWatchFaceService {
 		boolean mRegisteredTimeZoneReceiver = false;
 
 		Paint mBackgroundPaint;
-		Paint mTextPaint;
+		Paint mTextClockPaint;
+		Paint mTextBatteryPaint;
 
 		boolean mAmbient;
 
@@ -76,12 +125,18 @@ public class MyWatchFace extends CanvasWatchFaceService {
 		 */
 		boolean mLowBitAmbient;
 
+		Bitmap watchFaceBitmap;
+		int batterylevel = -1;
+
 		@Override
 		public void onCreate(SurfaceHolder holder) {
 			super.onCreate(holder);
 
 			setWatchFaceStyle(new WatchFaceStyle.Builder(MyWatchFace.this)
-					.setCardPeekMode(WatchFaceStyle.PEEK_MODE_VARIABLE)
+					.setCardPeekMode(WatchFaceStyle.PEEK_MODE_SHORT)
+					.setViewProtectionMode(WatchFaceStyle.PROTECT_HOTWORD_INDICATOR)
+					.setStatusBarGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL)
+					.setHotwordIndicatorGravity(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL)
 					.setBackgroundVisibility(WatchFaceStyle.BACKGROUND_VISIBILITY_INTERRUPTIVE)
 					.setShowSystemUiTime(false)
 					.build());
@@ -91,10 +146,17 @@ public class MyWatchFace extends CanvasWatchFaceService {
 			mBackgroundPaint = new Paint();
 			mBackgroundPaint.setColor(resources.getColor(R.color.digital_background));
 
-			mTextPaint = new Paint();
-			mTextPaint = createTextPaint(resources.getColor(R.color.digital_text));
+			mTextClockPaint = new Paint();
+			mTextClockPaint = createTextPaint(resources.getColor(R.color.digital_text));
+
+			mTextBatteryPaint = new Paint();
+			mTextBatteryPaint = createTextPaint(resources.getColor(R.color.digital_text));
 
 			mTime = new Time();
+
+			BitmapDrawable watchFaceDrawable = (BitmapDrawable) getResources().getDrawable(R.drawable.firefox, null);
+			watchFaceBitmap = watchFaceDrawable.getBitmap();
+
 		}
 
 		@Override
@@ -156,10 +218,13 @@ public class MyWatchFace extends CanvasWatchFaceService {
 			boolean isRound = insets.isRound();
 			mXOffset = resources.getDimension(isRound
 					? R.dimen.digital_x_offset_round : R.dimen.digital_x_offset);
-			float textSize = resources.getDimension(isRound
+			float textClockSize = resources.getDimension(isRound
 					? R.dimen.digital_text_size_round : R.dimen.digital_text_size);
+			float textBatterySize = resources.getDimension(
+					R.dimen.digital_text_size_battey);
 
-			mTextPaint.setTextSize(textSize);
+			mTextClockPaint.setTextSize(textClockSize);
+			mTextBatteryPaint.setTextSize(textBatterySize);
 		}
 
 		@Override
@@ -180,7 +245,8 @@ public class MyWatchFace extends CanvasWatchFaceService {
 			if (mAmbient != inAmbientMode) {
 				mAmbient = inAmbientMode;
 				if (mLowBitAmbient) {
-					mTextPaint.setAntiAlias(!inAmbientMode);
+					mTextClockPaint.setAntiAlias(!inAmbientMode);
+					mTextBatteryPaint.setAntiAlias(!inAmbientMode);
 				}
 				invalidate();
 			}
@@ -194,13 +260,38 @@ public class MyWatchFace extends CanvasWatchFaceService {
 		public void onDraw(Canvas canvas, Rect bounds) {
 			// Draw the background.
 			canvas.drawRect(0, 0, bounds.width(), bounds.height(), mBackgroundPaint);
-
+			float bitmapWidth = canvas.getHeight();
+			float bitmapHeight = watchFaceBitmap.getHeight() * canvas.getWidth() / watchFaceBitmap.getWidth();
+			canvas.drawBitmap(watchFaceBitmap, null, new RectF(0, 0, bitmapWidth, bitmapHeight), null);
 			// Draw H:MM in ambient mode or H:MM:SS in interactive mode.
 			mTime.setToNow();
-			String text = mAmbient
-					? String.format("%02d:%02d", mTime.hour, mTime.minute)
-					: String.format("%02d:%02d:%02d", mTime.hour, mTime.minute, mTime.second);
-			canvas.drawText(text, mXOffset, mYOffset, mTextPaint);
+			String text = String.format("%02d:%02d", mTime.hour, mTime.minute);
+			String batteryText = "---";
+			if (batterylevel >= 0) {
+				batteryText = String.format("%d%%", batterylevel);
+			}
+
+			RectF areaRectClock = new RectF(0, 0, canvas.getWidth(), canvas.getHeight());
+			RectF areaRectBattery = new RectF(canvas.getWidth() * 3 / 4, canvas.getHeight() * 2 / 3
+					, canvas.getWidth() / 4, canvas.getHeight() / 3);
+			RectF textClockBounds = getMeasuredTextRect(areaRectClock, text, mTextClockPaint);
+			RectF textBatteryBounds = getMeasuredTextRect(areaRectBattery, text, mTextBatteryPaint);
+
+			canvas.drawText(batteryText,
+					areaRectBattery.left, areaRectBattery.top - mTextBatteryPaint.ascent(), mTextBatteryPaint);
+			canvas.drawText(text, textClockBounds.left, textClockBounds.top - mTextClockPaint.ascent(), mTextClockPaint);
+		}
+
+		private RectF getMeasuredTextRect(RectF areaRect, String text, Paint textPaint) {
+			RectF bounds = new RectF(areaRect);
+			// measure text width
+			bounds.right = textPaint.measureText(text, 0, text.length());
+			// measure text height
+			bounds.bottom = textPaint.descent() - textPaint.ascent();
+
+			bounds.left += (areaRect.width() - bounds.right) / 2.0f;
+			bounds.top += (areaRect.height() - bounds.bottom) / 2.0f;
+			return bounds;
 		}
 
 		/**
@@ -233,6 +324,11 @@ public class MyWatchFace extends CanvasWatchFaceService {
 						- (timeMs % INTERACTIVE_UPDATE_RATE_MS);
 				mUpdateTimeHandler.sendEmptyMessageDelayed(MSG_UPDATE_TIME, delayMs);
 			}
+		}
+
+		public void updateBatteryInfo(int level) {
+			batterylevel = level;
+			mUpdateTimeHandler.sendEmptyMessage(MSG_UPDATE_TIME);
 		}
 	}
 
