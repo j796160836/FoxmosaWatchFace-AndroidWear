@@ -25,7 +25,7 @@
                 android:resource="@drawable/watchface_preview" />
             <meta-data
                 android:name="com.google.android.wearable.watchface.preview_circular"
-                android:resource="@drawable/watchface_preview" />
+                android:resource="@drawable/watchface_preview_round" />
 
             <intent-filter>
                 <action android:name="android.service.wallpaper.WallpaperService" />

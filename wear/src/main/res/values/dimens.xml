@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-	<dimen name="clock_text_size">38dp</dimen>
-	<dimen name="clock_text_size_round">45dp</dimen>
+	<dimen name="clock_text_size">55dp</dimen>
+	<dimen name="clock_text_size_round">60dp</dimen>
 	<dimen name="clock_text_size_battey">12dp</dimen>
 	<dimen name="clock_text_size_battey_round">14dp</dimen>
-	<dimen name="clock_y_offset">19dp</dimen>
-	<dimen name="clock_y_offset_round">6dp</dimen>
+	<dimen name="clock_x_offset">0dp</dimen>
+	<dimen name="clock_x_offset_round">0dp</dimen>
+	<dimen name="clock_y_offset">14dp</dimen>
+	<dimen name="clock_y_offset_round">10dp</dimen>
 
-	<dimen name="battery_x_offset">6dp</dimen>
+	<dimen name="battery_x_offset">10dp</dimen>
 	<dimen name="battery_x_offset_round">25dp</dimen>
-	<dimen name="battery_y_offset">6dp</dimen>
+	<dimen name="battery_y_offset">12dp</dimen>
 	<dimen name="battery_y_offset_round">25dp</dimen>
 </resources>

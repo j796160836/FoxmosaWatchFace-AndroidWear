@@ -88,6 +88,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
 		Time mTime;
 
+		float mXOffset;
 		float mYOffset;
 
 		float mBatteryXOffset;
@@ -117,6 +118,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
 					.setShowSystemUiTime(false)
 					.build());
 			Resources resources = MyWatchFace.this.getResources();
+			mXOffset = resources.getDimension(R.dimen.clock_x_offset);
 			mYOffset = resources.getDimension(R.dimen.clock_y_offset);
 
 			mPaint = new Paint();
@@ -151,7 +153,6 @@ public class MyWatchFace extends CanvasWatchFaceService {
 		private Paint createTextPaint(int textColor) {
 			Paint paint = new Paint();
 			paint.setColor(textColor);
-			paint.setTypeface(NORMAL_TYPEFACE);
 			paint.setAntiAlias(true);
 			return paint;
 		}
@@ -199,6 +200,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
 			// Load resources that have alternate values for round watches.
 			Resources resources = MyWatchFace.this.getResources();
 			boolean isRound = insets.isRound();
+			mXOffset = resources.getDimension(isRound ? R.dimen.clock_x_offset_round : R.dimen.clock_x_offset);
 			mYOffset = resources.getDimension(isRound ? R.dimen.clock_y_offset_round : R.dimen.clock_y_offset);
 
 			mBatteryXOffset = resources.getDimension(isRound
@@ -266,7 +268,7 @@ public class MyWatchFace extends CanvasWatchFaceService {
 				batteryText = String.format("%d%%", batterylevel);
 			}
 
-			RectF areaRectClock = new RectF(0, mYOffset, canvas.getWidth(), canvas.getHeight());
+			RectF areaRectClock = new RectF(mXOffset, mYOffset, canvas.getWidth(), canvas.getHeight());
 			RectF areaRectBattery = new RectF(
 					canvas.getWidth() * 3 / 4 - mBatteryXOffset
 					, canvas.getHeight() * 3 / 4 - mBatteryYOffset
