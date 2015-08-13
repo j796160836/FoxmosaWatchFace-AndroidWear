@@ -11,6 +11,6 @@
 
 	<dimen name="battery_x_offset">10dp</dimen>
 	<dimen name="battery_x_offset_round">25dp</dimen>
-	<dimen name="battery_y_offset">12dp</dimen>
-	<dimen name="battery_y_offset_round">25dp</dimen>
+	<dimen name="battery_y_offset">8dp</dimen>
+	<dimen name="battery_y_offset_round">23dp</dimen>
 </resources>
