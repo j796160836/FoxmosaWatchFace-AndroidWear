@@ -10,8 +10,11 @@ MozTW, Mozilla Taiwan Community
   
 ## Download
 Apps is available on Google Play  
-![GooglePlay download](https://raw.githubusercontent.com/j796160836/FoxmosaWatchFace-AndroidWear/master/screenshot/play.png)  
-[Download](https://apps.getpebble.com/en_US/application/55bed9ed39209aec5f000083)
+  
+<a href="https://play.google.com/store/apps/details?id=com.johnnyworks.foxmosawatchface">
+<img src="https://raw.githubusercontent.com/j796160836/FoxmosaWatchFace-AndroidWear/master/screenshot/play.png" alt="GooglePlay download"><br />
+Download
+</a>
 
 ## Build the code  
 
