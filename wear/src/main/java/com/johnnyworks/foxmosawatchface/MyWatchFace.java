@@ -111,9 +111,8 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
 			setWatchFaceStyle(new WatchFaceStyle.Builder(MyWatchFace.this)
 					.setCardPeekMode(WatchFaceStyle.PEEK_MODE_SHORT)
-					.setViewProtectionMode(WatchFaceStyle.PROTECT_HOTWORD_INDICATOR)
 					.setStatusBarGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL)
-					.setHotwordIndicatorGravity(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL)
+					.setHotwordIndicatorGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL)
 					.setBackgroundVisibility(WatchFaceStyle.BACKGROUND_VISIBILITY_INTERRUPTIVE)
 					.setShowSystemUiTime(false)
 					.build());
